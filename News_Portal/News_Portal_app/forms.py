@@ -1,0 +1,27 @@
+from django_filters import DateFilter
+from django import forms
+from .models import Post, Author
+from django.core.exceptions import ValidationError
+from datetime import datetime
+
+class PostForm(forms.ModelForm):
+    heading = forms.CharField(min_length=20)
+    author = Author.objects.all().values('auth__username')   #.values('auth')
+    date = DateFilter(field_name='time_in', widget=forms.DateInput(attrs={'type': 'date'}), label='Поиск по дате',
+                      lookup_expr='date__gte')
+
+    class Meta:
+        model = Post
+        fields = [
+            'heading',
+            'author',
+            'text',
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        heading = cleaned_data.get("heading")
+        text = cleaned_data.get("text")
+        if heading == text:
+            raise ValidationError("Описание не должно быть идентично названию.")
+        return cleaned_data
